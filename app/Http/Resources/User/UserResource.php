@@ -9,7 +9,6 @@ class UserResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        // 🎯 Usamos $this->plan directamente para que Laravel lo busque automáticamente si el controlador olvidó cargarlo
         $plan = $this->plan; 
 
         return [
@@ -20,11 +19,9 @@ class UserResource extends JsonResource
             'permissions' => $this->getAllPermissions()->pluck('name'),
             'is_active'   => $this->is_active,
             
-            // Banderas
             'has_active_subscription' => (bool) $this->subscription_active,
             'subscription_ends_at'    => $this->subscription_ends_at?->toIso8601String(),
 
-            // Objeto Plan
             'plan' => $plan ? [
                 'id'           => $plan->id,
                 'type'         => $plan->type,
@@ -35,6 +32,11 @@ class UserResource extends JsonResource
                 'description'  => $plan->description,
                 'whatsapp'     => $plan->whatsapp,
             ] : null,
+
+            // 🚀 Inyectamos de forma segura los conteos del controlador
+            'wishlist_count' => $this->wishlist_count ?? 0,
+            'cart_count'     => $this->cart_count ?? 0,
+            'widget_count'   => $this->widget_count ?? 0,
         ];
     }
 }

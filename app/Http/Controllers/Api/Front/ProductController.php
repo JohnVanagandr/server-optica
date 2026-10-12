@@ -8,9 +8,12 @@ use App\Services\ProductService;
 use App\Http\Resources\Product\ProductResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Traits\ApiResponse; // Aseguramos usar el trait si usamos $this->success
 
 class ProductController extends Controller
 {
+    use ApiResponse; // Si $this->success viene de este Trait
+
     protected $productService;
 
     public function __construct(ProductService $productService)
@@ -24,7 +27,10 @@ class ProductController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $products = $this->productService->getCatalogForUser($request->all());
+            // Filtramos parámetros relevantes para evitar basura en el arreglo de filtros
+            $filters = $request->only(['is_featured']);
+            
+            $products = $this->productService->getCatalogForUser($filters);
 
             return $this->success(
                 ProductResource::collection($products), 
@@ -43,10 +49,10 @@ class ProductController extends Controller
     public function show(Product $product): JsonResponse
     {
         try {
-            $product = $this->productService->getPublicProductById($product);
+            $productData = $this->productService->getPublicProductById($product);
 
             return $this->success(
-                new ProductResource($product), 
+                new ProductResource($productData), 
                 'Product retrieved successfully', 
                 200
             );
@@ -54,4 +60,4 @@ class ProductController extends Controller
             return $this->handleException($e, 'Error fetching public product details');
         }
     }     
-}    
+}

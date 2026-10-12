@@ -104,7 +104,7 @@ class AuthController extends Controller
                     'password' => Hash::make($request->password),
                 ]);
 
-                $newUser->assignRole('branch-admin');
+                $newUser->assignRole('client');
                 
                 return $newUser;
             });

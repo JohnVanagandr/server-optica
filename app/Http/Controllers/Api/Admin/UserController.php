@@ -4,88 +4,89 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Http\Resources\Admin\UserResource;
+use App\Http\Resources\User\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
 class UserController extends Controller
 {
     /**
-     * Listar todos los usuarios del sistema con su jerarquía empresarial
+     * Display a listing of the resource.
      */
     public function index(Request $request): JsonResponse
     {
         try {
             $perPage = $request->integer('per_page', 10);
 
-            // Carga ansiosa masiva para tener toda la foto del cliente en la lista
-            $users = User::with([
-                'branch.account', 
-                'branch.products.category'
-            ])
-            ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+            // 🚀 Usamos el scope de Spatie ->role('client') en lugar de ->where('role', 'client')
+            $users = User::role('client')
+                ->with(['plan'])
+                ->withCount([
+                    'likedProducts as wishlist_count',     
+                    'draftCartProducts as cart_count',     
+                    'catalogProducts as widget_count'      
+                ])
+                ->orderBy('created_at', 'desc')
+                ->paginate($perPage);
 
             return $this->paginatedResponse(
                 $users,
                 UserResource::class,
-                'Listado de usuarios obtenido con éxito.'
+                'Listado de clientes obtenido con éxito.'
             );
         } catch (\Exception $e) {
-            return $this->handleException($e, 'Error al listar los usuarios');
+            return $this->handleException($e, 'Error al listar los clientes');
         }
     }
 
-    /**
-     * Ver los datos hiper-detallados de un usuario específico
-     */
     public function show(string $id): JsonResponse
     {
         try {
-            $user = User::with([
-                'branch.account', 
-                'branch.products.category'
-            ])->findOrFail($id);
+            // 🚀 Usamos Spatie aquí también
+            $user = User::role('client')
+                ->with(['plan'])
+                ->withCount([
+                    'likedProducts as wishlist_count',
+                    'draftCartProducts as cart_count',
+                    'catalogProducts as widget_count'
+                ])
+                ->findOrFail($id);
 
             return $this->success(
                 new UserResource($user),
-                'Detalle completo del usuario obtenido con éxito.'
+                'Detalle completo del cliente obtenido con éxito.'
             );
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return $this->error('El usuario solicitado no existe.', 404);
+            return $this->error('El cliente solicitado no existe o no tienes permisos.', 404);
         } catch (\Exception $e) {
-            return $this->handleException($e, 'Error al obtener el usuario');
+            return $this->handleException($e, 'Error al obtener el cliente');
         }
     }
 
-    /**
-     * Acción de seguridad: Activar/Desactivar acceso al sistema
-     */
     public function toggleStatus(string $id): JsonResponse
     {
         try {
-            $user = User::with('branch')->findOrFail($id);
+            // 🚀 Validamos que sea un cliente usando Spatie
+            $user = User::role('client')->findOrFail($id);
 
-            // 🛡️ Regla de Negocio Crítica: Evitar que el SuperAdmin se desactive a sí mismo
-            if ($user->id === auth()->id()) {
-                return $this->error('Operación denegada: No puedes desactivar tu propia cuenta de administrador.', 403);
-            }
-
-            // Alternamos el valor booleano actual (Si es true pasa a false, y viceversa)
             $user->is_active = !$user->is_active;
             $user->save();
 
-            // Mensaje dinámico para dar mejor retroalimentación al frontend
+            // Si fue suspendido, matamos sus sesiones activas de inmediato
+            if (!$user->is_active) {
+                $user->tokens()->delete();
+            }
+
             $estadoString = $user->is_active ? 'activado' : 'desactivado (suspendido)';
 
             return $this->success(
                 new UserResource($user),
-                "El usuario ha sido {$estadoString} exitosamente."
+                "El cliente ha sido {$estadoString} exitosamente."
             );
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return $this->error('El usuario no existe.', 404);
+            return $this->error('El cliente no existe o no es válido para esta operación.', 404);
         } catch (\Exception $e) {
-            return $this->handleException($e, 'Error al cambiar el estado del usuario');
+            return $this->handleException($e, 'Error al cambiar el estado del cliente');
         }
     }
 }

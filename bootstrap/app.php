@@ -10,7 +10,6 @@ use App\Http\Middleware\ApiMiddlewareHandler;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
-        // api: __DIR__.'/../routes/api.php', // Desactivado: tus archivos modulares controlan todo
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
         then: function () {
@@ -27,14 +26,13 @@ return Application::configure(basePath: dirname(__DIR__))
                 });
 
             // 3. PANEL CLIENTES (Protegido por Sanctum + Onboarding)
-            Route::middleware(['api', 'auth:sanctum'])
+            Route::middleware(['api', 'auth:sanctum', 'is_active'])
                 ->prefix('api/client')
                 ->group(function () {
                     require base_path('routes/client.php');
                 });
 
             // 4. PANEL ADMINISTRATIVO (Protegido solo por Sanctum)
-            // La granularidad de permisos ocurre dentro de routes/admin.php
             Route::middleware(['api', 'auth:sanctum']) 
                 ->prefix('api/admin')
                 ->group(function () {

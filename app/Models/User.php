@@ -12,9 +12,7 @@ use App\Notifications\Auth\ResetPasswordNotification;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
-    use HasRoles, HasApiTokens;
+    use HasFactory, Notifiable, HasRoles, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
@@ -53,8 +51,8 @@ class User extends Authenticatable
             'email_verified_at'    => 'datetime',
             'password'             => 'hashed',
             'is_active'            => 'boolean',
-            'subscription_active'  => 'boolean',  // <-- Añadido
-            'subscription_ends_at' => 'datetime', // <-- Añadido
+            'subscription_active'  => 'boolean',  
+            'subscription_ends_at' => 'datetime', 
         ];
     }
 
@@ -66,45 +64,61 @@ class User extends Authenticatable
         $this->notify(new ResetPasswordNotification($token));
     }    
     
-    // Un usuario pertenece a UNA sola sucursal
+    // ==========================================
+    // RELACIONES BÁSICAS
+    // ==========================================
+
     public function branch()
     {
         return $this->belongsTo(Branch::class);
     }
 
-    /**
-     * Relación: Un usuario pertenece a un Plan.
-     */
     public function plan()
     {
         return $this->belongsTo(Plan::class);
     }
 
-    /**
-     * Los likes que este usuario ha dado.
-     */
-    public function likes()
-    {
-        return $this->hasMany(Like::class);
-    }
-
-    /**
-     * Los productos a los que este cliente le ha dado Like.
-     */
-    public function likedProducts()
-    {
-        return $this->belongsToMany(Product::class, 'product_user_like')->withTimestamps();
-    }
-
-    // Relación con el Widget (Suponiendo 1 widget por usuario por ahora)
     public function widget()
     {
         return $this->hasOne(Widget::class);
     }
 
-    // Los productos que conforman el catálogo publicado del cliente
+    // ==========================================
+    // 1. EL CATÁLOGO PUBLICADO (Tabla: product_user)
+    // ==========================================
+    
     public function catalogProducts()
     {
         return $this->belongsToMany(Product::class, 'product_user')->withTimestamps();
+    }
+
+    // ALIAS: Para que no falle si algún controlador llama a cartProducts()
+    public function cartProducts()
+    {
+        return $this->catalogProducts();
+    }
+
+    // ==========================================
+    // 2. EL CARRITO BORRADOR (Tabla: cart_user)
+    // ==========================================
+    
+    public function draftCartProducts()
+    {
+        return $this->belongsToMany(Product::class, 'cart_user')->withTimestamps();
+    }
+
+    // ==========================================
+    // 3. LOS FAVORITOS / ME GUSTA (Tabla: product_user_like)
+    // ==========================================
+    
+    public function likedProducts()
+    {
+        return $this->belongsToMany(Product::class, 'product_user_like')->withTimestamps();
+    }
+
+    // ALIAS: Para unificar las llamadas de favoriteProducts() y likedProducts()
+    public function favoriteProducts()
+    {
+        return $this->likedProducts();
     }
 }

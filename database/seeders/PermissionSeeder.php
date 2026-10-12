@@ -22,6 +22,7 @@ class PermissionSeeder extends Seeder
             'products'   => ['index', 'show', 'store', 'update', 'destroy', 'like', 'toggle-status'],
             'widgets'    => ['index', 'show', 'store', 'update', 'destroy', 'embed-code'],
             'account'    => ['onboarding', 'subscription'],
+            'likes'      => ['index'],
         ];
 
         $guardName = 'web';

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Catalog;
+namespace App\Http\Controllers\Api\Front;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;

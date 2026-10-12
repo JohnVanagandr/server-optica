@@ -13,6 +13,7 @@ class ApiMiddlewareHandler
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'auto_permission' => \App\Http\Middleware\CheckResourcePermission::class,
+            'is_active' => \App\Http\Middleware\EnsureUserIsActive::class,
         ]);
     }
 }

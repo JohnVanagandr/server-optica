@@ -17,7 +17,7 @@ class UserSeeder extends Seeder
                 'name'      => 'John Becerra',
                 'password'  => Hash::make('password123'),
                 'is_active' => true,
-                'branch_id' => null, 
+                // Eliminado: 'branch_id' => null, 
             ]
         );
         $admin->assignRole('admin');
@@ -29,7 +29,7 @@ class UserSeeder extends Seeder
                 'name'      => 'Super Administrador',
                 'password'  => Hash::make('password123'),
                 'is_active' => true,
-                'branch_id' => null,
+                // Eliminado: 'branch_id' => null,
             ]
         );
         $superAdmin->assignRole('super-admin');
@@ -41,7 +41,7 @@ class UserSeeder extends Seeder
                 'name'      => 'Cliente Final',
                 'password'  => Hash::make('password123'),
                 'is_active' => true,
-                'branch_id' => null,
+                // Eliminado: 'branch_id' => null,
             ]
         );
         $client->assignRole('client');
