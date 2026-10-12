@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Client\SubscriptionController;
 use App\Http\Controllers\Api\Client\WidgetController;
 use App\Http\Controllers\Api\Client\FavoriteController;
+use App\Http\Controllers\Api\Client\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auto_permission'])->group(function () {    
@@ -29,4 +30,6 @@ Route::middleware(['auto_permission'])->group(function () {
     // ==========================================
     Route::get('/plans', [SubscriptionController::class, 'index'])->name('plans.index');
     Route::post('/suscripcion', [SubscriptionController::class, 'subscribe'])->name('plans.subscribe');
+
+    Route::post('/payments/init', [PaymentController::class, 'initPayment']);
 });

@@ -34,5 +34,16 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'wompi' => [
+        'env'              => env('WOMPI_ENV', 'sandbox'),
+        'public_key'       => env('WOMPI_PUBLIC_KEY'),
+        'private_key'      => env('WOMPI_PRIVATE_KEY'),
+        'integrity_secret' => env('WOMPI_INTEGRITY_SECRET'),
+        'events_secret'    => env('WOMPI_EVENTS_SECRET'),
+        // Wompi usa URLs diferentes para sandbox y producción
+        'base_url'         => env('WOMPI_ENV', 'sandbox') === 'production' 
+                                ? 'https://production.wompi.co/v1' 
+                                : 'https://sandbox.wompi.co/v1',
+    ],    
 
 ];
