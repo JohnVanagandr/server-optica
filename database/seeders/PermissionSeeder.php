@@ -23,7 +23,8 @@ class PermissionSeeder extends Seeder
             'widgets'    => ['index', 'show', 'store', 'update', 'destroy', 'embed-code'],
             'account'    => ['onboarding', 'subscription'],
             'likes'      => ['index'],
-            'payments'   => ['index', 'show'], 
+            'payments'   => ['index', 'show'],
+            'advertisements' => ['index', 'show', 'store', 'update', 'destroy', 'toggle-status'], 
         ];
 
         $guardName = 'web';

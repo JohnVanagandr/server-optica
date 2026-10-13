@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Admin\PaymentController;
 use App\Http\Controllers\Api\Admin\LikeAnalyticsController;
+use App\Http\Controllers\Api\Admin\AdvertisementController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auto_permission'])->group(function () {
@@ -22,4 +23,7 @@ Route::middleware(['auto_permission'])->group(function () {
     
     // Analíticas
     Route::get('/analytics/likes', [LikeAnalyticsController::class, 'getStats'])->middleware('permission:likes.index');
+
+    Route::apiResource('advertisements', AdvertisementController::class);
+Route::patch('advertisements/{advertisement}/toggle-status', [AdvertisementController::class, 'toggleStatus']);
 });
