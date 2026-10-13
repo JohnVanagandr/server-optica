@@ -15,7 +15,7 @@ class PermissionSeeder extends Seeder
 
         // Matriz de Permisos Granulares
         $modules = [
-            'plans'      => ['index', 'show', 'store', 'update', 'destroy', 'subscribe'], // <-- Añadido 'subscribe' aquí
+            'plans'      => ['index', 'show', 'store', 'update', 'destroy', 'subscribe'],
             'users'      => ['index', 'show', 'toggle-status'],
             'branches'   => ['index', 'show', 'update'],
             'categories' => ['index', 'show', 'store', 'update', 'destroy'],
@@ -23,6 +23,7 @@ class PermissionSeeder extends Seeder
             'widgets'    => ['index', 'show', 'store', 'update', 'destroy', 'embed-code'],
             'account'    => ['onboarding', 'subscription'],
             'likes'      => ['index'],
+            'payments'   => ['index', 'show'], 
         ];
 
         $guardName = 'web';

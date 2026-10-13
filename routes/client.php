@@ -32,4 +32,5 @@ Route::middleware(['auto_permission'])->group(function () {
     Route::post('/suscripcion', [SubscriptionController::class, 'subscribe'])->name('plans.subscribe');
 
     Route::post('/payments/init', [PaymentController::class, 'initPayment']);
+    Route::get('/payments/current', [PaymentController::class, 'currentPayment']);
 });

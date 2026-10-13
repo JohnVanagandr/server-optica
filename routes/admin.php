@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\UserController;
+use App\Http\Controllers\Api\Admin\PaymentController;
 use App\Http\Controllers\Api\Admin\LikeAnalyticsController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +17,8 @@ Route::middleware(['auto_permission'])->group(function () {
     Route::patch('/users/{id}/toggle-status', [UserController::class, 'toggleStatus']);
 
     Route::apiResource('users', UserController::class)->only(['index', 'show']);
+
+    Route::apiResource('payments', PaymentController::class)->only(['index']);
     
     // Analíticas
     Route::get('/analytics/likes', [LikeAnalyticsController::class, 'getStats'])->middleware('permission:likes.index');

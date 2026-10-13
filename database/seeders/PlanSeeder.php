@@ -17,7 +17,7 @@ class PlanSeeder extends Seeder
             ['type' => 'basico'],
             [
                 'name'         => 'Plan Básico',
-                'price'        => 120.000,
+                'price'        => 120000,
                 'max_products' => 15,
                 'max_widgets'  => 1,
                 'description'  => null,
@@ -30,7 +30,7 @@ class PlanSeeder extends Seeder
             ['type' => 'premium'],
             [
                 'name'         => 'Plan Premium',
-                'price'        => 180.000,
+                'price'        => 180000,
                 'max_products' => 20,
                 'max_widgets'  => 1,
                 'description'  => 'Incluye soporte prioritario, asesoramiento personalizado y mayor límite de inventario.',

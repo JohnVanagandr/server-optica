@@ -21,31 +21,52 @@ class PaymentController extends Controller
     }
 
     /**
+     * Devuelve el pago pendiente del usuario (si tiene uno)
+     */
+    public function currentPayment(Request $request): JsonResponse
+    {
+        $latestPayment = Payment::with('plan:id,name')
+                                ->where('user_id', $request->user()->id)
+                                ->where('status', 'PENDING')
+                                ->latest()
+                                ->first();
+        return $this->success($latestPayment, 'Estado actual del pago');
+    }
+
+    /**
      * Inicializa la transacción y devuelve los datos firmados para el Frontend
      */
     public function initPayment(Request $request): JsonResponse
     {
-        // 1. Validamos que nos envíen un plan válido
         $request->validate([
             'plan_id' => 'required|exists:plans,id',
         ]);
 
         try {
             $user = $request->user();
-            
-            // Suponiendo que tu modelo Plan tiene un campo 'price'
             $plan = Plan::findOrFail($request->plan_id); 
             
-            // Si el plan es gratuito (precio 0), no deberíamos pasarlo por Wompi
             if ($plan->price <= 0) {
                 return $this->error('Este plan no requiere pago procesado por Wompi.', 400);
             }
 
-            // 2. Generamos la referencia única de pago
             $reference = $this->wompiService->generateReference();
 
-            // 3. Creamos el registro del pago en la BD asegurado con una transacción
             $payment = DB::transaction(function () use ($user, $plan, $reference) {
+                
+                $existingPayment = Payment::where('user_id', $user->id)
+                                          ->where('status', 'PENDING')
+                                          ->first();
+
+                if ($existingPayment) {
+                    $existingPayment->update([
+                        'plan_id'   => $plan->id,
+                        'reference' => $reference,
+                        'amount'    => $plan->price,
+                    ]);
+                    return $existingPayment;
+                }
+
                 return Payment::create([
                     'user_id'   => $user->id,
                     'plan_id'   => $plan->id,
@@ -56,7 +77,6 @@ class PaymentController extends Controller
                 ]);
             });
 
-            // 4. Obtenemos los datos cifrados desde nuestro WompiService
             $checkoutData = $this->wompiService->getCheckoutData($reference, $plan->price);
 
             return $this->success(
@@ -67,5 +87,5 @@ class PaymentController extends Controller
         } catch (\Exception $e) {
             return $this->handleException($e, 'Error al inicializar el pago con Wompi');
         }
-    }
+    }    
 }

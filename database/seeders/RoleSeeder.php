@@ -31,6 +31,7 @@ class RoleSeeder extends Seeder
             'plans.index', 'plans.show',
             'branches.index', 'branches.show',
             'likes.index',
+            'payments.index', 'payments.show',
         ]);
 
         // --- CLIENTE (Consumidor final con acceso a planes y suscripción) ---
