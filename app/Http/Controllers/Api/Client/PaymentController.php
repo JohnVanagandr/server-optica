@@ -21,16 +21,17 @@ class PaymentController extends Controller
     }
 
     /**
-     * Devuelve el pago pendiente del usuario (si tiene uno)
+     * Devuelve el último pago del usuario para validar su estado
      */
     public function currentPayment(Request $request): JsonResponse
     {
+        // Esto permite que el frontend lea cuando pasa a APPROVED o DECLINED
         $latestPayment = Payment::with('plan:id,name')
                                 ->where('user_id', $request->user()->id)
-                                ->where('status', 'PENDING')
                                 ->latest()
                                 ->first();
-        return $this->success($latestPayment, 'Estado actual del pago');
+                                
+        return $this->success($latestPayment, 'Estado del último pago');
     }
 
     /**

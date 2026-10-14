@@ -33,7 +33,7 @@ class AuthController extends Controller
             }
 
             // 3. Cargar las relaciones necesarias para el Resource (Incluyendo 'permissions')
-            $user->load(['branch.account', 'roles', 'permissions']);
+            $user->load(['branch.account', 'roles', 'permissions', 'plan']);
 
             // 4. Generación de Tokens
             $accessToken = $user->createToken('access_token', ['*'], now()->addHours(2))->plainTextToken;
@@ -140,7 +140,8 @@ class AuthController extends Controller
                 'roles', 
                 'permissions', 
                 'branch.account',
-                'branch.activeWidget'
+                'branch.activeWidget',
+                'plan'
             ]);
 
             return $this->success(

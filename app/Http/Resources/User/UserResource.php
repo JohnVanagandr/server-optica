@@ -33,7 +33,6 @@ class UserResource extends JsonResource
                 'whatsapp'     => $plan->whatsapp,
             ] : null,
 
-            // 🚀 Inyectamos de forma segura los conteos del controlador
             'wishlist_count' => $this->wishlist_count ?? 0,
             'cart_count'     => $this->cart_count ?? 0,
             'widget_count'   => $this->widget_count ?? 0,
