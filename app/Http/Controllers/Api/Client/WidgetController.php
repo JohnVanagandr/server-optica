@@ -16,25 +16,32 @@ class WidgetController extends Controller
 {
     protected $widgetService;
 
+    /**
+     * Inyección de dependencias. 
+     * Mantenemos el controlador limpio delegando la lógica pesada al WidgetService.
+     */
     public function __construct(WidgetService $widgetService)
     {
         $this->widgetService = $widgetService;
     }
 
     /**
-     * Publica un widget con los productos y configuración proporcionados.
+     * 🚀 PUBLICAR O ACTUALIZAR EL WIDGET (Catálogo Oficial)
+     * Recibe la configuración visual y el arreglo estricto de IDs desde el frontend.
      */
     public function publish(PublishWidgetRequest $request): JsonResponse
     {
         try {
+            // 1. Cargamos al usuario y su plan para validar límites
             $user = $request->user()->load('plan'); 
             $validated = $request->validated();
             
+            // Extraemos los productos que el frontend estructuró como [{id: 1}, {id: 2}]
             $productsToPublish = $validated['products'] ?? [];
             $requestedCount = count($productsToPublish);
 
+            // Validamos contra el plan del usuario (Si es -1 es ilimitado)
             $planLimit = $user->plan->max_products ?? 5;
-
             if ($planLimit != -1 && $requestedCount > $planLimit) {
                 return response()->json([
                     'status' => 'error',
@@ -46,15 +53,16 @@ class WidgetController extends Controller
                 ], 403);
             }
 
-            // 1. Publicamos usando el servicio (se guarda en product_user)
+            // 2. EJECUCIÓN DEL SERVICIO: Guarda la configuración del widget y vincula los productos en product_user
             $widget = $this->widgetService->publishWidget(
                 $user,
                 $validated['config'] ?? null,
                 $productsToPublish
             );
 
-            // 2. 🚀 REGISTRO DE TRAZA PARA ANALÍTICAS: Registramos que pasaron al catálogo oficial
-            $productIds = array_column($productsToPublish, 'id'); // o collect($productsToPublish)->pluck('id')
+            // 3. ANALÍTICAS (TRAZABILIDAD): Registramos qué productos pasaron a ser oficiales
+            // Extraemos solo los IDs numéricos del arreglo asociativo
+            $productIds = array_column($productsToPublish, 'id'); 
             foreach ($productsToPublish as $prod) {
                 $prodId = is_array($prod) ? ($prod['id'] ?? null) : $prod;
                 if ($prodId) {
@@ -66,40 +74,49 @@ class WidgetController extends Controller
                 }
             }
 
-            // 3. ELIMINAMOS EL CARRITO BORRADOR (La intención se convirtió en acción)
+            // 4. LIMPIEZA DEL BORRADOR: Como los productos ya son oficiales, vaciamos el carrito híbrido local
             $user->draftCartProducts()->detach();
 
             $message = $request->boolean('isUpdate') 
                 ? '¡Catálogo actualizado correctamente!' 
                 : '¡Widget publicado exitosamente!';
 
-            return $this->success(
-                new WidgetResource($widget),
-                $message
-            );
+            // 🚀 5. LA MEJORA DEFINITIVA: Recuperación del Estado Fresco
+            // En lugar de hacer $widget->load('products') (lo cual fallaba porque la relación está en el User),
+            // reutilizamos el método central del servicio que sabe exactamente cómo reconstruir el catálogo.
+            $data = $this->widgetService->getClientCatalogData($user);
+
+            // Devolvemos la respuesta exacta que espera Zustand en React (Cero peticiones extras en frontend)
+            return $this->success([
+                'widget' => new WidgetResource($data['widget']),
+                'products' => ProductResource::collection($data['products'])
+            ], $message);
 
         } catch (InvalidArgumentException $e) {
+            // Captura de errores de negocio (Ej: Reglas del servicio que no se cumplen)
             return response()->json([
                 'status' => 'error',
                 'message' => $e->getMessage()
             ], $e->getCode() ?: 400);
         } catch (\Exception $e) {
+            // Captura de errores fatales del servidor
             return $this->handleException($e, 'Error al publicar la configuración del widget');
         }
     }
 
     /**
-     * Obtener el catálogo (el publicado en el widget) y el carrito borrador (abandonado).
+     * OBTENER EL ESTADO INICIAL DEL CATÁLOGO
+     * Carga lo que ya está publicado y lo que el usuario dejó abandonado en el borrador.
      */
     public function catalog(Request $request): JsonResponse
     {
         try {
             $user = $request->user()->load('plan'); 
             
-            // Traemos la data del widget (Tabla product_user)
+            // Datos consolidados desde el servicio (Los verdes / guardados)
             $data = $this->widgetService->getClientCatalogData($user); 
 
-            // 🚀 Traemos la data del borrador (Tabla cart_user)
+            // Datos temporales (Los azules / pending_add del carrito)
             $draftProducts = $user->draftCartProducts()->get();
 
             $selectedCount = count($data['products']);
@@ -107,8 +124,8 @@ class WidgetController extends Controller
             
             return $this->success([
                 'widget' => $data['widget'] ? new WidgetResource($data['widget']) : null,
-                'products' => ProductResource::collection($data['products']), // Lo publicado
-                'draft_products' => ProductResource::collection($draftProducts), // El borrador temporal
+                'products' => ProductResource::collection($data['products']), 
+                'draft_products' => ProductResource::collection($draftProducts), 
                 'plan_status' => [
                     'limit' => $planLimit,
                     'selected' => $selectedCount,
@@ -126,7 +143,8 @@ class WidgetController extends Controller
      */
 
     /**
-     * Alterna (agrega o quita) un producto del CARRITO (Borrador).
+     * Alterna un producto dentro del carrito borrador en tiempo real.
+     * Si no está, lo agrega (attach), si está, lo quita (detach).
      */
     public function toggleCatalogProduct(Request $request): JsonResponse
     {
@@ -137,9 +155,9 @@ class WidgetController extends Controller
 
             $user = $request->user();
             
-            // 🚀 CAMBIO VITAL: Usamos draftCartProducts() para guardarlo en la tabla 'cart_user'
             $result = $user->draftCartProducts()->toggle($request->product_id);
 
+            // Verificamos si el ID resultante quedó adjuntado para enviar el mensaje correcto
             $attached = count($result['attached']) > 0;
             $message = $attached ? 'Añadido al carrito exitosamente' : 'Removido del carrito';
 
@@ -153,7 +171,8 @@ class WidgetController extends Controller
     }
 
     /**
-     * Sincroniza el estado del carrito de invitado guardándolo como Borrador.
+     * Sincroniza las intenciones (carrito y favoritos) de un usuario que navegaba
+     * como invitado (localStorage) al momento de iniciar sesión.
      */
     public function syncState(Request $request): JsonResponse
     {
@@ -167,7 +186,7 @@ class WidgetController extends Controller
 
             $user = $request->user();
 
-            // 1. Fusión en la Base de Datos (Respeta lo que ya tenía guardado)
+            // syncWithoutDetaching garantiza que no borremos lo que el usuario ya tenía guardado de sesiones previas
             if (!empty($request->widget_ids)) {
                 $user->draftCartProducts()->syncWithoutDetaching($request->widget_ids);
             }
@@ -175,12 +194,11 @@ class WidgetController extends Controller
                 $user->favoriteProducts()->syncWithoutDetaching($request->likes_ids);
             }
 
-            // 2. 🚀 EL CAMBIO: Traemos los objetos completos con todos sus datos
+            // Retornamos el estado completo para que el frontend lo cargue en Zustand
             $draftProducts = $user->draftCartProducts()->get();
             $favoriteProducts = $user->favoriteProducts()->get();
 
             return $this->success([
-                // Usamos ProductResource para devolver las imágenes y precios formateados
                 'draft_cart' => ProductResource::collection($draftProducts),
                 'likes' => ProductResource::collection($favoriteProducts)
             ], 'Carrito sincronizado con éxito');
