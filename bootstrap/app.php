@@ -38,10 +38,20 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->group(function () {
                     require base_path('routes/admin.php');
                 });
+
+            // 🚀 5. RUTAS DEL WIDGET (Iframe Monolítico)
+            Route::middleware('web')
+                ->group(base_path('routes/widget.php'));
         }
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Tu manejador personalizado de APIs
         (new ApiMiddlewareHandler())->bind($middleware);
+
+        // Excluir la ruta pública del widget de la protección CSRF
+        $middleware->validateCsrfTokens(except: [
+            'w/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         (new ApiExceptionHandler())->bind($exceptions);

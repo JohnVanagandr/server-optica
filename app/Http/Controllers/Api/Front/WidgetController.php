@@ -3,25 +3,27 @@
 namespace App\Http\Controllers\Api\Front;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\Widget;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 
 class WidgetController extends Controller
 {
     /**
-     * Muestra los datos públicos del widget de una óptica en formato JSON
+     * Renderiza la vista Blade del Iframe que se incrusta en las páginas de los clientes
      */
-    public function show($widget) // $widget sería el ID o Slug del usuario/óptica
+    public function renderIframe($widgetCode)
     {
-        // Tu lógica pública para devolver los productos del catálogo de esta óptica
-    }
+        $widget = Widget::with('user')->where('widget_code', $widgetCode)->firstOrFail();
+        
+        $products = $widget->user->catalogProducts()
+                         ->with('category')
+                         ->where('is_active', true)
+                         ->get();
 
-    /**
-     * Renderiza la vista Blade del Iframe que se incrusta en otras páginas
-     */
-    public function renderIframe($widget)
-    {
-        // Tu lógica para retornar la vista (return view('widget.iframe', [...]))
+        // Laravel renderiza la vista y le inyecta los datos
+        return view('widget.iframe', [
+            'widget' => $widget,
+            'products' => $products
+        ]);
     }
 }
