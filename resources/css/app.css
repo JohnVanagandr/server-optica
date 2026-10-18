@@ -2,3 +2,21 @@
 
 /* 🚀 Obliga a Tailwind v4 a escanear tu widget de React */
 @source "../js";
+
+/* Estilo moderno y minimalista para el scroll interno del catálogo */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
