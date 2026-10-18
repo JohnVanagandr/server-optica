@@ -62,9 +62,6 @@ class ProductController extends Controller
         );
     }
 
-    /**
-     * Actualizar un producto existente
-     */
     public function update(UpdateProductRequest $request, Product $product): JsonResponse
     {
         try {
@@ -84,37 +81,61 @@ class ProductController extends Controller
         }
     }
 
-    /**
-     * Alternar el estado "destacado" de un producto
-     */
     public function toggleFeatured(Product $product): JsonResponse
     {
-        $product->is_featured = !$product->is_featured;
-        $product->save();
+        try {
+            $product->is_featured = !$product->is_featured;
+            $product->save();
 
-        return $this->success(
-            new ProductResource($product),
-            $product->is_featured ? 'Producto marcado como destacado.' : 'Producto removido de destacados.'
-        );
+            return $this->success(
+                new ProductResource($product),
+                $product->is_featured ? 'Producto marcado como destacado.' : 'Producto removido de destacados.'
+            );
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Error al cambiar la visibilidad del producto');
+        }
     }
 
     public function toggleActive(Product $product): JsonResponse
     {
-        $product->is_active = !$product->is_active;
-        $product->save();
+        try {
+            // Regla de Negocio: Validar si está en uso por clientes de pago antes de desactivar
+            if ($product->is_active) {
+                $enUsoPorClientesPagos = $product->widgetUsers()->where('subscription_active', true)->exists();
 
-        return $this->success(
-            new ProductResource($product),
-            $product->is_active ? 'Producto activado con éxito.' : 'Producto desactivado con éxito.'
-        );
+                if ($enUsoPorClientesPagos) {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'No se puede desactivar: El producto está siendo utilizado en el probador de clientes de pago.'
+                    ], 422);
+                }
+            }
+
+            $product->is_active = !$product->is_active;
+            $product->save();
+
+            return $this->success(
+                new ProductResource($product),
+                $product->is_active ? 'Producto activado con éxito.' : 'Producto desactivado con éxito.'
+            );
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Error al cambiar el estado del producto');
+        }
     }
 
-    /**
-     * Eliminar un producto
-     */
     public function destroy(Product $product): JsonResponse
     {
         try {
+            // Regla de Negocio: Evitar eliminación si está en el widget de clientes con suscripción
+            $enUsoPorClientesPagos = $product->widgetUsers()->where('subscription_active', true)->exists();
+
+            if ($enUsoPorClientesPagos) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'No se puede eliminar: El producto está actualmente publicado en el catálogo de uno o más clientes con suscripción activa.'
+                ], 422);
+            }
+
             $this->productService->deleteProduct($product);
 
             return $this->success([], 'Producto y fotografía eliminados correctamente.');

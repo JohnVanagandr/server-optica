@@ -25,6 +25,7 @@ class RoleSeeder extends Seeder
 
         // --- ADMIN ---
         $admin->syncPermissions([
+            'dashboard.admin', // 🚀 NUEVO: Acceso al panel
             'categories.index', 'categories.show', 'categories.store', 'categories.update', 'categories.destroy',
             'products.index', 'products.show', 'products.store', 'products.update', 'products.destroy', 'products.toggle-status',
             'users.index', 'users.show', 'users.toggle-status',

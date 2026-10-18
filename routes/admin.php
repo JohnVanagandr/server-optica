@@ -6,10 +6,11 @@ use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Admin\PaymentController;
 use App\Http\Controllers\Api\Admin\LikeAnalyticsController;
 use App\Http\Controllers\Api\Admin\AdvertisementController;
+use App\Http\Controllers\Api\Admin\DashboardController; 
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auto_permission'])->group(function () {
-    // Catálogo del SaaS
+    
     Route::apiResource('products', ProductController::class);
     Route::patch('products/{product}/featured', [ProductController::class, 'toggleFeatured']);
     Route::patch('products/{product}/active', [ProductController::class, 'toggleActive']);   
@@ -21,9 +22,10 @@ Route::middleware(['auto_permission'])->group(function () {
 
     Route::apiResource('payments', PaymentController::class)->only(['index']);
     
-    // Analíticas
     Route::get('/analytics/likes', [LikeAnalyticsController::class, 'getStats'])->middleware('permission:likes.index');
 
+    Route::get('/metrics', [DashboardController::class, 'getMetrics'])->middleware('permission:dashboard.admin');
+
     Route::apiResource('advertisements', AdvertisementController::class);
-Route::patch('advertisements/{advertisement}/toggle-status', [AdvertisementController::class, 'toggleStatus']);
+    Route::patch('advertisements/{advertisement}/toggle-status', [AdvertisementController::class, 'toggleStatus']);
 });

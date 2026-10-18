@@ -15,6 +15,8 @@ class PermissionSeeder extends Seeder
 
         // Matriz de Permisos Granulares
         $modules = [
+            // 🚀 NUEVO: Permiso para ver el panel de métricas
+            'dashboard'  => ['admin'], 
             'plans'      => ['index', 'show', 'store', 'update', 'destroy', 'subscribe'],
             'users'      => ['index', 'show', 'toggle-status'],
             'branches'   => ['index', 'show', 'update'],
