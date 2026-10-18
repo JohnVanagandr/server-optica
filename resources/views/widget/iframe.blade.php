@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $widget->title ?? 'Catálogo Virtual' }}</title>
-    
-    <meta http-equiv="X-Frame-Options" content="ALLOWALL">
 
     <!-- Inyectamos los datos para React -->
     <script>
@@ -15,7 +13,7 @@
         };
     </script>
 
-    <!-- 🚀 Cargamos Tailwind y React simultáneamente -->
+    <!-- Cargamos Tailwind y React simultáneamente -->
     @viteReactRefresh
     @vite(['resources/css/app.css', 'resources/js/widget.jsx'])
 </head>

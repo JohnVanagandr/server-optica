@@ -123,7 +123,7 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
-    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
     'logo_url'     => env('APP_LOGO_URL', env('APP_URL') . '/assets/default-logo.png'),
 
 ];

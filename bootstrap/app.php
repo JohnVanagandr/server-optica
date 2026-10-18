@@ -39,7 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     require base_path('routes/admin.php');
                 });
 
-            // 🚀 5. RUTAS DEL WIDGET (Iframe Monolítico)
+            // 5. RUTAS DEL WIDGET (Iframe Monolítico)
             Route::middleware('web')
                 ->group(base_path('routes/widget.php'));
         }

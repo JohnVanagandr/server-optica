@@ -17,6 +17,11 @@ export default defineConfig({
         tailwindcss(),
     ],
     server: {
+        host: '0.0.0.0', // Permite que dispositivos en tu red (celular) se conecten
+        cors: true,      // Soluciona los bloqueos rojos de CORS en la consola
+        hmr: {
+            host: '192.168.1.4', // Obliga a los scripts a usar tu IP real
+        },
         watch: {
             ignored: ['**/storage/framework/views/**'],
         },
