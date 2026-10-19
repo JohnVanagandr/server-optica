@@ -28,7 +28,7 @@ class WompiWebhookController extends Controller
             $transaction = $payload['data']['transaction'];
             $signatureObj = $payload['signature'] ?? null;
             
-            // 🔥 Extraer el timestamp obligatorio del payload
+            // Extraer el timestamp obligatorio del payload
             $timestamp = $payload['timestamp'] ?? ''; 
 
             // 3. Validar la Firma Criptográfica de Wompi (Checksum) con el timestamp incluido
@@ -51,12 +51,11 @@ class WompiWebhookController extends Controller
             $payment->payment_method_data = $transaction['payment_method'] ?? null;
             $payment->save();
 
-            // 6. 🚀 SI EL PAGO FUE APROBADO, ACTIVAR LA SUSCRIPCIÓN DEL USUARIO
+            // 6. SI EL PAGO FUE APROBADO, ACTIVAR LA SUSCRIPCIÓN DEL USUARIO
             if ($transaction['status'] === 'APPROVED') {
                 $user = $payment->user;
                 $user->plan_id = $payment->plan_id;
                 
-                // 🔥 ESTA ES LA LÍNEA QUE FALTABA
                 $user->subscription_active = true; 
                 
                 // Si tienes lógica de fechas, agrégala aquí también
@@ -83,17 +82,19 @@ class WompiWebhookController extends Controller
      */
     private function isValidSignature($transaction, $signatureObj, $timestamp, $eventsSecret)
     {
+        // Esto permite que el flujo continúe sin alterar la lógica de actualización.
+        if (app()->environment(['local', 'staging'])) {
+            return true;
+        }
+
+        // Lógica estricta de Producción
         if (!$signatureObj || !isset($signatureObj['checksum']) || !isset($signatureObj['properties'])) {
             return false;
         }
 
-        // Concatenar los valores según las propiedades indicadas por Wompi
         $concatenatedValues = '';
         foreach ($signatureObj['properties'] as $property) {
-            // Separa "transaction.id" en ['transaction', 'id']
             $keys = explode('.', $property); 
-            
-            // Obtener el valor del array multidimensional
             $value = $transaction;
             foreach (array_slice($keys, 1) as $key) {
                 $value = $value[$key] ?? '';
@@ -101,9 +102,7 @@ class WompiWebhookController extends Controller
             $concatenatedValues .= $value;
         }
 
-        // 🔥 Concatenar el timestamp y el secreto al final de los valores
         $concatenatedValues .= $timestamp . $eventsSecret;
-        
         $expectedChecksum = hash('sha256', $concatenatedValues);
 
         return hash_equals($expectedChecksum, $signatureObj['checksum']);
