@@ -29,10 +29,10 @@ class WompiWebhookController extends Controller
             $signatureObj = $payload['signature'] ?? null;
 
             // 3. Validar la Firma Criptográfica de Wompi (Checksum)
-            // if (!$this->isValidSignature($transaction, $signatureObj, $eventsSecret)) {
-            //     Log::warning('Wompi Webhook: Firma inválida detectada', ['payload' => $payload]);
-            //     return response()->json(['error' => 'Firma inválida'], 401);
-            // }
+            if (!$this->isValidSignature($transaction, $signatureObj, $eventsSecret)) {
+                Log::warning('Wompi Webhook: Firma inválida detectada', ['payload' => $payload]);
+                return response()->json(['error' => 'Firma inválida'], 401);
+            }
 
             // 4. Buscar el pago en nuestra base de datos por la referencia
             $payment = Payment::where('reference', $transaction['reference'])->first();
