@@ -1,0 +1,70 @@
+name: Deploy to Staging (Optimized)
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build-and-deploy:
+    name: Build Frontend & Deploy Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Descargar el código en el servidor de GitHub
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      # 2. Preparar el entorno Node.js en GitHub
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Ajusta a la versión que uses localmente
+
+      # 3. La parte pesada: Compilar Vite usando la RAM de GitHub
+      - name: Compilar Assets (En GitHub)
+        run: |
+          npm ci
+          npm run build
+
+      # 4. Actualizar el código base de Laravel en el VPS (Git Pull)
+      - name: Sincronizar Backend en VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USERNAME }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: ${{ secrets.DO_PORT }}
+          script: |
+            cd /var/www/server.johnbecerra.dev
+            php artisan down --message="Actualizando entorno..."
+            git fetch origin
+            # Se hace un reseteo duro para igualar la rama, por lo que borraremos la build vieja del VPS si la hubiera
+            git reset --hard origin/develop
+            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
+      # 5. Transferir silenciosamente la compilación terminada al VPS
+      - name: Transferir Build Frontend al VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USERNAME }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: ${{ secrets.DO_PORT }}
+          source: "public/build"
+          target: "/var/www/server.johnbecerra.dev"
+
+      # 6. Ejecutar migraciones y encender la aplicación
+      - name: Finalizar Despliegue en VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USERNAME }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: ${{ secrets.DO_PORT }}
+          script: |
+            cd /var/www/server.johnbecerra.dev
+            php artisan migrate --force
+            php artisan optimize:clear
+            php artisan up
+            echo "✅ Despliegue finalizado usando recursos optimizados."
