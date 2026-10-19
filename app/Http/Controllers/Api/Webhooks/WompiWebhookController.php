@@ -16,7 +16,7 @@ class WompiWebhookController extends Controller
     {
         try {
             // 1. Obtener la llave secreta de eventos del .env
-            $eventsSecret = config('services.wompi.events_secret');
+            $eventsSecret = env('WOMPI_EVENTS_SECRET');
             
             // 2. Extraer los datos del evento de Wompi
             $payload = $request->all();
