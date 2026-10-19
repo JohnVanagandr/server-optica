@@ -27,9 +27,12 @@ class WompiWebhookController extends Controller
 
             $transaction = $payload['data']['transaction'];
             $signatureObj = $payload['signature'] ?? null;
+            
+            // 🔥 Extraer el timestamp obligatorio del payload
+            $timestamp = $payload['timestamp'] ?? ''; 
 
-            // 3. Validar la Firma Criptográfica de Wompi (Checksum)
-            if (!$this->isValidSignature($transaction, $signatureObj, $eventsSecret)) {
+            // 3. Validar la Firma Criptográfica de Wompi (Checksum) con el timestamp incluido
+            if (!$this->isValidSignature($transaction, $signatureObj, $timestamp, $eventsSecret)) {
                 Log::warning('Wompi Webhook: Firma inválida detectada', ['payload' => $payload]);
                 return response()->json(['error' => 'Firma inválida'], 401);
             }
@@ -78,7 +81,7 @@ class WompiWebhookController extends Controller
     /**
      * Reconstruye la firma y la compara con la enviada por Wompi
      */
-    private function isValidSignature($transaction, $signatureObj, $eventsSecret)
+    private function isValidSignature($transaction, $signatureObj, $timestamp, $eventsSecret)
     {
         if (!$signatureObj || !isset($signatureObj['checksum']) || !isset($signatureObj['properties'])) {
             return false;
@@ -98,7 +101,9 @@ class WompiWebhookController extends Controller
             $concatenatedValues .= $value;
         }
 
-        $concatenatedValues .= $eventsSecret;
+        // 🔥 Concatenar el timestamp y el secreto al final de los valores
+        $concatenatedValues .= $timestamp . $eventsSecret;
+        
         $expectedChecksum = hash('sha256', $concatenatedValues);
 
         return hash_equals($expectedChecksum, $signatureObj['checksum']);
